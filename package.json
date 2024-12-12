@@ -1,0 +1,23 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Backend du projet 6 OCR",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/mvksim95/P6-OCR-LIVRES.git"
+  },
+  "author": "Maxime Tison",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mvksim95/P6-OCR-LIVRES/issues"
+  },
+  "homepage": "https://github.com/mvksim95/P6-OCR-LIVRES#readme",
+  "dependencies": {
+    "express": "^4.21.2",
+    "nodemon": "^3.1.7"
+  }
+}
