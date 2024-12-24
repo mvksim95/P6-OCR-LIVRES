@@ -1,6 +1,8 @@
 const Book = require ('../models/Book');
 const fs = require ('fs');
 
+const mongoose = require('mongoose');
+
 exports.createBook = (req, res, next) => {
   console.log('DEBUG req.body.book : ', req.body);
   console.log('DEBUG 2 image : ', req.file);
@@ -28,14 +30,28 @@ exports.getAllBooks = (req, res, next) => {
           res.status(400).json({
             error: error
           });
+          
         }
       );
 }; 
 
+exports.getOneBook = (req, res, next) => {
+  Book.findOne({
+    _id: req.params.id
+  }).then(
+    (book) => {
+      res.status(200).json(book);
+    }
+  ).catch(
+    (error) => {
+      res.status(404).json({
+        error: error
+      });
+    }
+  );
+};
 
-// a tester 
 exports.deleteBook = (req, res, next) => {
-
   Book.findOne({ _id: req.params.id })
     .then(book => {
       if (book.userID != req.auth.userID) {
