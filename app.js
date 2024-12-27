@@ -9,7 +9,6 @@ const app = express();
 
 app.use(express.json());
 
-
 mongoose.connect('mongodb+srv://maksimedev:ocrp6livres@p6-livres.mmzdh.mongodb.net/?retryWrites=true&w=majority&appName=p6-livres',
     {
         useNewUrlParser: true,

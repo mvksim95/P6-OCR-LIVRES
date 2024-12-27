@@ -37,7 +37,7 @@ exports.getAllBooks = (req, res, next) => {
 
 exports.getBestRating = (req, res, next) => {
   Book.find()
-    .sort({ averageRating: -1 }) // Tri décroissant sur averageRating
+    .sort({ averageRating: -1 }) // tri décroissant sur averageRating
     .limit(3)
     .then((books) => {
       res.status(200).json(books);
@@ -66,66 +66,63 @@ exports.getOneBook = (req, res, next) => {
 exports.modifyBook = (req, res, next) => {
   Book.findOne({ _id: req.params.id })
     .then(book => {
-      if (book.userId != req.auth.userId) {
-        res.status(401).json({ message: 'Non-autorisé' });
-      } else {
-        Book.updateOne(
-          { _id: req.params.id },
-          { ...req.body, _id: req.params.id }
-        )
-          .then(() => {
-            res.status(200).json({ message: 'Objet modifié !' });
-          })
-          .catch(error => res.status(401).json({ error }));
+      if (!book) {
+        return res.status(404).json({ message: 'Livre non trouvé.' });
       }
+
+      if (book.userId != req.auth.userId) {
+        return res.status(401).json({ message: 'Non-autorisé.' });
+      }
+      let updatedBook = { ...req.body }; 
+
+      if (req.file) {
+        updatedBook.imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
+
+        const oldImageFilename = book.imageUrl.split('/images/')[1];
+        fs.unlink(`images/${oldImageFilename}`, (err) => {
+          if (err) console.error('Erreur lors de la suppression de l\'ancienne image:', err);
+        });
+      }
+
+      Book.updateOne(
+        { _id: req.params.id },
+        { ...updatedBook, _id: req.params.id }
+      )
+        .then(() => res.status(200).json({ message: 'Livre modifié avec succès !' }))
+        .catch(error => res.status(400).json({ error }));
     })
-    .catch(error => {
-      res.status(500).json({ error });
-    });
+    .catch(error => res.status(500).json({ error }));
 };
 
+exports.addRating = (req, res, next) => {
 
-// exports.addRating = (req, res, next) => {
-//   const bookId = req.params.id;
-//   const userId = req.auth.userId;
-//   const { grade } = req.body; // Le champ attendu est `grade`
+  const bookId = req.params.id;
+  const userId = req.auth.userId;
+  const grade = req.body.rating;
 
-//   console.log('DEBUG req.body:', req.body);
-//   console.log('DEBUG req.params.id:', req.params.id);
-//   console.log('DEBUG req.auth.userId:', req.auth.userId);
+  if (!grade || grade < 0 || grade > 5) {
+    return res.status(400).json({ message: 'La note doit être entre 0 et 5.' });
+  }
 
-//   if (!grade || grade < 0 || grade > 5) {
-//     return res.status(400).json({ message: 'La note doit être entre 0 et 5. est le pb est ici' });
-//   }
+  Book.findOne({ _id: bookId })
+    .then(book => {
 
-//   Book.findOne({ _id: bookId })
-//     .then(book => {
-//       if (!book) {
-//         return res.status(404).json({ message: 'Livre non trouvé.' });
-//       }
+      book.ratings.push({ userId, grade });
 
-//       // Vérifie si l'utilisateur a déjà noté
-//       const existingRating = book.ratings.find(rating => rating.userId === userId);
-//       if (existingRating) {
-//         return res.status(400).json({ message: 'Vous avez déjà noté ce livre.' });
-//       }
+      const totalRatings = book.ratings.length;
+      const sumRatings = book.ratings.reduce((sum, rating) => sum + rating.grade, 0);
+      book.averageRating = parseFloat((sumRatings / totalRatings).toFixed(1)); // limite à 1 décimale (0.x)
 
-//       // Ajoute le nouveau rating
-//       book.ratings.push({ userId, grade });
+      book.save()
+        .then(() => res.status(201).json(book))
+        .catch(error => { res.status(400).json({ error }) })
+    })
+    .catch(error => {
+      console.error('DEBUG Error:', error);
+      res.status(500).json({ error });
+    });
 
-//       // Recalcule la moyenne
-//       const totalRatings = book.ratings.length;
-//       const sumRatings = book.ratings.reduce((sum, rating) => sum + rating.grade, 0);
-//       book.averageRating = sumRatings / totalRatings;
-
-//       // Sauvegarde les modifications
-//       book.save()
-//         .then(() => res.status(200).json({ message: 'Note ajoutée avec succès.', book }))
-//         .catch(error => res.status(500).json({ error }));
-//     })
-//     .catch(error => res.status(500).json({ error }));
-// };
-
+}
 
 
 exports.deleteBook = (req, res, next) => {
